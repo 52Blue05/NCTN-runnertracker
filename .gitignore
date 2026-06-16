@@ -37,4 +37,5 @@ out/
 .vscode/
 
 ### OS generated files ###
+src/main/resources/application.properties
 *.properties
