@@ -32,8 +32,14 @@ public class RunSessionService {
     public RunSessionResponse createRunSession(String username, CreateRunSessionRequest request) {
         User user = findUserByUsername(username);
 
-        // Tính avg_pace (phút/km)
-        BigDecimal avgPace = calculateAvgPace(request.getDurationSeconds(), request.getDistanceKm());
+        // Round distanceKm to 3 decimal places to match DB schema and prevent Data truncation
+        BigDecimal distanceKm = request.getDistanceKm();
+        if (distanceKm != null) {
+            distanceKm = distanceKm.setScale(3, RoundingMode.HALF_UP);
+        }
+
+        // Tính avgPace
+        BigDecimal avgPace = calculateAvgPace(request.getDurationSeconds(), distanceKm);
 
         // Parse status, default COMPLETED
         RunSession.Status status = RunSession.Status.COMPLETED;
@@ -50,7 +56,7 @@ public class RunSessionService {
                 .user(user)
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
-                .distanceKm(request.getDistanceKm())
+                .distanceKm(distanceKm)
                 .durationSeconds(request.getDurationSeconds())
                 .avgPace(avgPace)
                 .stepCount(request.getStepCount() != null ? request.getStepCount() : 0)
@@ -98,7 +104,14 @@ public class RunSessionService {
                 .divide(BigDecimal.valueOf(60), 4, RoundingMode.HALF_UP);
 
         // avgPace = durationMinutes / distanceKm
-        return durationMinutes.divide(distanceKm, 2, RoundingMode.HALF_UP);
+        BigDecimal pace = durationMinutes.divide(distanceKm, 2, RoundingMode.HALF_UP);
+        
+        // Clamp to 999.99 to fit in DECIMAL(5, 2)
+        BigDecimal maxPace = new BigDecimal("999.99");
+        if (pace.compareTo(maxPace) > 0) {
+            return maxPace;
+        }
+        return pace;
     }
 
     private User findUserByUsername(String username) {
