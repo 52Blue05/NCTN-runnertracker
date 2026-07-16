@@ -36,6 +36,7 @@ out/
 ### VS Code ###
 .vscode/
 
-### OS generated files ###
-src/main/resources/application.properties
-*.properties
+### Sensitive config ###
+# Block dev properties (has hardcoded passwords)
+src/main/resources/application-dev.properties
+# Allow application.properties and application-prod.properties (no secrets, use env vars)
