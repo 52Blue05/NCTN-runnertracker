@@ -89,6 +89,24 @@ public class AuthService {
     }
 
     /**
+     * Đổi mật khẩu cho user đang đăng nhập.
+     */
+    @Transactional
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu cũ không đúng");
+        }
+
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    /**
      * Map User entity → UserProfileResponse DTO
      */
     private UserProfileResponse toUserProfileResponse(User user) {

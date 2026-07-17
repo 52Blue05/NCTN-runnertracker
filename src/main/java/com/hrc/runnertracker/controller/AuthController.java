@@ -1,5 +1,6 @@
 package com.hrc.runnertracker.controller;
 
+import com.hrc.runnertracker.dto.request.ChangePasswordRequest;
 import com.hrc.runnertracker.dto.request.LoginRequest;
 import com.hrc.runnertracker.dto.request.RegisterRequest;
 import com.hrc.runnertracker.dto.response.ApiResponse;
@@ -10,10 +11,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -49,5 +49,23 @@ public class AuthController {
 
         return ResponseEntity
                 .ok(ApiResponse.success("Đăng nhập thành công", authResponse));
+    }
+
+    /**
+     * PUT /api/v1/auth/change-password
+     * Đổi mật khẩu cho user đang đăng nhập.
+     */
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        authService.changePassword(
+                userDetails.getUsername(),
+                request.getCurrentPassword(),
+                request.getNewPassword());
+
+        return ResponseEntity
+                .ok(ApiResponse.success("Đổi mật khẩu thành công", null));
     }
 }
