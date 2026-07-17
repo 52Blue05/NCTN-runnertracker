@@ -6,12 +6,12 @@ import com.hrc.runnertracker.entity.Event;
 import com.hrc.runnertracker.exception.ResourceNotFoundException;
 import com.hrc.runnertracker.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,21 +20,21 @@ public class EventService {
     private final EventRepository eventRepository;
 
     /**
-     * Lấy danh sách sự kiện sắp tới (upcoming).
+     * Lấy danh sách sự kiện sắp tới (upcoming) — có phân trang.
      */
     @Transactional(readOnly = true)
-    public List<EventResponse> getUpcomingEvents() {
-        List<Event> events = eventRepository.findByEventDateAfterOrderByEventDateAsc(LocalDateTime.now());
-        return events.stream().map(this::toResponse).collect(Collectors.toList());
+    public Page<EventResponse> getUpcomingEvents(Pageable pageable) {
+        Page<Event> page = eventRepository.findByEventDateAfterOrderByEventDateAsc(LocalDateTime.now(), pageable);
+        return page.map(this::toResponse);
     }
 
     /**
-     * Lấy tất cả sự kiện.
+     * Lấy tất cả sự kiện — có phân trang.
      */
     @Transactional(readOnly = true)
-    public List<EventResponse> getAllEvents() {
-        List<Event> events = eventRepository.findAllByOrderByEventDateDesc();
-        return events.stream().map(this::toResponse).collect(Collectors.toList());
+    public Page<EventResponse> getAllEvents(Pageable pageable) {
+        Page<Event> page = eventRepository.findAllByOrderByEventDateDesc(pageable);
+        return page.map(this::toResponse);
     }
 
     /**
@@ -82,3 +82,4 @@ public class EventService {
                 .build();
     }
 }
+

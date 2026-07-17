@@ -6,12 +6,13 @@ import com.hrc.runnertracker.dto.response.EventResponse;
 import com.hrc.runnertracker.service.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/events")
@@ -21,18 +22,30 @@ public class EventController {
     private final EventService eventService;
 
     /**
-     * GET /api/v1/events — Lấy danh sách sự kiện.
-     * Query param: filter=upcoming (default) hoặc filter=all
+     * GET /api/v1/events — Lấy danh sách sự kiện (phân trang).
+     * Query params:
+     *   filter = upcoming (default) hoặc all
+     *   page   = số trang (default 0)
+     *   size   = số phần tử mỗi trang (default 20, tối đa 50)
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<EventResponse>>> getEvents(
-            @RequestParam(defaultValue = "upcoming") String filter) {
+    public ResponseEntity<ApiResponse<Page<EventResponse>>> getEvents(
+            @RequestParam(defaultValue = "upcoming") String filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
-        List<EventResponse> events;
+        // Giới hạn size tối đa để tránh client yêu cầu quá lớn
+        if (size > 50) {
+            size = 50;
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<EventResponse> events;
+
         if ("all".equalsIgnoreCase(filter)) {
-            events = eventService.getAllEvents();
+            events = eventService.getAllEvents(pageable);
         } else {
-            events = eventService.getUpcomingEvents();
+            events = eventService.getUpcomingEvents(pageable);
         }
 
         return ResponseEntity.ok(
@@ -64,3 +77,4 @@ public class EventController {
                 .body(ApiResponse.success("Tạo sự kiện thành công", response));
     }
 }
+
